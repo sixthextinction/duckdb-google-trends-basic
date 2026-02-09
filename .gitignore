@@ -1,0 +1,26 @@
+# DuckDB database files
+*.duckdb
+*.duckdb.wal
+data/*.duckdb
+data/*.duckdb.wal
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+ENV/
+
+# Generated outputs
+*.png
+
+# Internal/maintenance files
+internals/
+
+# OS files
+.DS_Store
+Thumbs.db
