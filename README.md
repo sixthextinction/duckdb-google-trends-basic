@@ -2,6 +2,8 @@
 
 This is a proof-of-concept for a **lightweight, FOSS alternative to Google Trends** that tracks search engine results (SERPs) over time and calculates search interest trends. 
 
+This project is accompaniment for my blog post on the same topic, which you can read here: https://medium.com/python-in-plain-english/i-built-a-self-hosted-google-trends-alternative-with-duckdb-624a19bcab65
+
 It uses Bright Data's SERP API to fetch Google results for keywords and stores them in DuckDB. The system automatically calculates a **Search Interest Score** (0-100) based on SERP movement—similar to Google Trends—by tracking new domains entering top 10, rank improvements, and SERP reshuffles.
 
 **Core Features:**
