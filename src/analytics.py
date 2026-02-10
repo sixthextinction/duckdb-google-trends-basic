@@ -201,9 +201,15 @@ class SERPAnalytics:
             'results': result
         }
     
-    def interest_scores(self, query: str, days: int = 90) -> Dict[str, Any]:
+    def interest_scores(self, query: str, days: int = 90, 
+                        start_date: Optional[datetime] = None, 
+                        end_date: Optional[datetime] = None) -> Dict[str, Any]:
         """Get interest scores for a query over time"""
-        cutoff_date = datetime.now().date() - timedelta(days=days)
+        if start_date is not None:
+            start = start_date.date() if hasattr(start_date, 'date') else start_date
+        else:
+            start = datetime.now().date() - timedelta(days=days)
+        end = end_date.date() if end_date and hasattr(end_date, 'date') else (end_date or datetime.now().date())
         
         result = self.conn.execute("""
             SELECT 
@@ -215,8 +221,9 @@ class SERPAnalytics:
             FROM interest_scores
             WHERE query = ?
               AND snapshot_date >= ?
+              AND snapshot_date <= ?
             ORDER BY snapshot_date ASC
-        """, [query, cutoff_date]).df()
+        """, [query, start, end]).df()
         
         return {
             'query': query,

@@ -1,150 +1,131 @@
 """
-Seed database with synthetic data for testing/demos
+Seed database with synthetic data for testing/demos.
+Self-contained: inserts static data only.
 """
 
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from duckdb_manager import DuckDBManager
 
-# Realistic Next.js SERP results (expanded to allow new domains)
-DOMAINS = [
-    ("https://nextjs.org/", "nextjs.org", "Next.js by Vercel - The React Framework"),
-    ("https://vercel.com/docs/frameworks/nextjs", "vercel.com", "Next.js Documentation | Vercel Docs"),
-    ("https://github.com/vercel/next.js", "github.com", "vercel/next.js: The React Framework"),
-    ("https://www.w3schools.com/nextjs/", "w3schools.com", "Next.js Tutorial - W3Schools"),
-    ("https://nextjs.org/docs", "nextjs.org", "Next.js Documentation"),
-    ("https://www.freecodecamp.org/news/nextjs-tutorial/", "freecodecamp.org", "Next.js Tutorial for Beginners"),
-    ("https://nextjs.org/learn", "nextjs.org", "Learn Next.js - Interactive Course"),
-    ("https://blog.logrocket.com/nextjs-tutorial/", "logrocket.com", "Next.js Tutorial: Building a Full-Stack App"),
-    ("https://www.youtube.com/watch?v=nextjs", "youtube.com", "Next.js Full Course for Beginners"),
-    ("https://www.reddit.com/r/nextjs/", "reddit.com", "r/nextjs - Next.js Community"),
-    # Additional domains for dramatic new entrants
-    ("https://www.tutorialspoint.com/nextjs/", "tutorialspoint.com", "Next.js Tutorial - TutorialsPoint"),
-    ("https://www.javatpoint.com/nextjs", "javatpoint.com", "Next.js Tutorial - JavaTpoint"),
-    ("https://www.geeksforgeeks.org/nextjs/", "geeksforgeeks.org", "Next.js Tutorial - GeeksforGeeks"),
-    ("https://www.codecademy.com/learn/nextjs", "codecademy.com", "Learn Next.js - Codecademy"),
-    ("https://www.udemy.com/course/nextjs/", "udemy.com", "Next.js Complete Course - Udemy"),
+# Static snapshot data: list of {query, date, results}
+# Each results entry: {url, title, snippet}
+# Order varies by day to produce interest score variation
+STATIC_SNAPSHOTS = [
+    # nextjs
+    {"query": "nextjs", "date": "2024-01-01", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "nextjs", "date": "2024-01-02", "order": [0, 2, 1, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "nextjs", "date": "2024-01-03", "order": [0, 1, 2, 4, 3, 5, 6, 7, 8, 9]},
+    {"query": "nextjs", "date": "2024-01-04", "order": [1, 0, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "nextjs", "date": "2024-01-05", "order": [0, 1, 2, 3, 5, 4, 6, 7, 8, 9]},
+    {"query": "nextjs", "date": "2024-01-06", "order": [0, 1, 2, 3, 4, 5, 6, 8, 7, 9]},
+    {"query": "nextjs", "date": "2024-01-07", "order": [0, 1, 2, 3, 4, 5, 6, 7, 9, 8]},
+    # react
+    {"query": "react", "date": "2024-01-01", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-02", "order": [0, 2, 1, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-03", "order": [2, 0, 1, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-04", "order": [0, 1, 3, 2, 4, 5, 6, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-05", "order": [0, 1, 2, 3, 5, 4, 6, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-06", "order": [0, 1, 2, 3, 4, 6, 5, 7, 8, 9]},
+    {"query": "react", "date": "2024-01-07", "order": [0, 1, 2, 3, 4, 5, 6, 7, 9, 8]},
+    # vue
+    {"query": "vue", "date": "2024-01-01", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-02", "order": [0, 2, 1, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-03", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-04", "order": [1, 0, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-05", "order": [0, 1, 2, 4, 3, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-06", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "vue", "date": "2024-01-07", "order": [0, 1, 2, 3, 4, 5, 6, 8, 7, 9]},
+    # angular
+    {"query": "angular", "date": "2024-01-01", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-02", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-03", "order": [0, 2, 1, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-04", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-05", "order": [0, 1, 2, 3, 5, 4, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-06", "order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+    {"query": "angular", "date": "2024-01-07", "order": [0, 1, 2, 3, 4, 5, 6, 7, 9, 8]},
 ]
 
-SNIPPETS = [
-    "Production-ready React framework with the best developer experience and all the features you need for production.",
-    "Learn how to build full-stack React applications with Next.js, the React framework for production.",
-    "Next.js gives you the best developer experience with all the features you need for production: hybrid static & server rendering, TypeScript support, smart bundling, route pre-fetching, and more.",
-    "Get started with Next.js in minutes. Learn the fundamentals and advanced features of the React framework.",
-    "Complete guide to building modern web applications with Next.js, including routing, API routes, and deployment.",
-    "Step-by-step tutorial covering Next.js basics, server-side rendering, static site generation, and more.",
-    "Interactive course that teaches you Next.js from scratch. Build real-world applications as you learn.",
-    "Comprehensive Next.js tutorial covering everything from setup to deployment. Includes code examples and best practices.",
-    "Watch this complete Next.js course for beginners. Learn React, server-side rendering, and full-stack development.",
-    "Join the Next.js community on Reddit. Get help, share projects, and discuss the latest Next.js features and updates.",
-]
+# Base results per query (indexed by order above)
+QUERY_BASES = {
+    "nextjs": [
+        {"url": "https://nextjs.org/", "title": "Next.js by Vercel", "snippet": "React framework for production."},
+        {"url": "https://vercel.com/docs/nextjs", "title": "Next.js Docs | Vercel", "snippet": "Documentation for Next.js."},
+        {"url": "https://github.com/vercel/next.js", "title": "vercel/next.js", "snippet": "The React Framework."},
+        {"url": "https://www.w3schools.com/nextjs/", "title": "Next.js Tutorial", "snippet": "Learn Next.js basics."},
+        {"url": "https://nextjs.org/docs", "title": "Next.js Documentation", "snippet": "Official docs."},
+        {"url": "https://www.freecodecamp.org/news/nextjs/", "title": "Next.js Tutorial", "snippet": "Tutorial for beginners."},
+        {"url": "https://nextjs.org/learn", "title": "Learn Next.js", "snippet": "Interactive course."},
+        {"url": "https://blog.logrocket.com/nextjs/", "title": "Next.js Tutorial", "snippet": "Building full-stack apps."},
+        {"url": "https://www.youtube.com/watch?v=nextjs", "title": "Next.js Course", "snippet": "Video course."},
+        {"url": "https://www.reddit.com/r/nextjs/", "title": "r/nextjs", "snippet": "Next.js community."},
+    ],
+    "react": [
+        {"url": "https://react.dev/", "title": "React", "snippet": "Library for user interfaces."},
+        {"url": "https://reactjs.org/", "title": "React - A JavaScript library", "snippet": "Build user interfaces."},
+        {"url": "https://github.com/facebook/react", "title": "facebook/react", "snippet": "React repository."},
+        {"url": "https://www.w3schools.com/react/", "title": "React Tutorial", "snippet": "Learn React."},
+        {"url": "https://react.dev/learn", "title": "Learn React", "snippet": "Official tutorial."},
+        {"url": "https://www.freecodecamp.org/news/react/", "title": "React Tutorial", "snippet": "Beginners guide."},
+        {"url": "https://www.codecademy.com/learn/react", "title": "Learn React", "snippet": "Codecademy course."},
+        {"url": "https://blog.logrocket.com/react/", "title": "React Tutorial", "snippet": "Modern web apps."},
+        {"url": "https://www.youtube.com/watch?v=react", "title": "React Course", "snippet": "Video course."},
+        {"url": "https://www.reddit.com/r/reactjs/", "title": "r/reactjs", "snippet": "React community."},
+    ],
+    "vue": [
+        {"url": "https://vuejs.org/", "title": "Vue.js", "snippet": "Progressive JavaScript framework."},
+        {"url": "https://github.com/vuejs/core", "title": "vuejs/core", "snippet": "Vue framework."},
+        {"url": "https://www.w3schools.com/vuejs/", "title": "Vue.js Tutorial", "snippet": "Learn Vue.js."},
+        {"url": "https://vuejs.org/tutorial/", "title": "Vue.js Tutorial", "snippet": "Official guide."},
+        {"url": "https://www.freecodecamp.org/news/vuejs/", "title": "Vue.js Tutorial", "snippet": "Beginners guide."},
+        {"url": "https://www.codecademy.com/learn/vue-js", "title": "Learn Vue.js", "snippet": "Codecademy course."},
+        {"url": "https://blog.logrocket.com/vuejs/", "title": "Vue.js Tutorial", "snippet": "Modern web apps."},
+        {"url": "https://www.youtube.com/watch?v=vuejs", "title": "Vue.js Course", "snippet": "Video course."},
+        {"url": "https://www.reddit.com/r/vuejs/", "title": "r/vuejs", "snippet": "Vue.js community."},
+        {"url": "https://www.tutorialspoint.com/vuejs/", "title": "Vue.js Tutorial", "snippet": "TutorialsPoint."},
+    ],
+    "angular": [
+        {"url": "https://angular.io/", "title": "Angular", "snippet": "Web framework."},
+        {"url": "https://github.com/angular/angular", "title": "angular/angular", "snippet": "Angular framework."},
+        {"url": "https://www.w3schools.com/angular/", "title": "Angular Tutorial", "snippet": "Learn Angular."},
+        {"url": "https://angular.io/tutorial", "title": "Angular Tutorial", "snippet": "Official guide."},
+        {"url": "https://www.freecodecamp.org/news/angular/", "title": "Angular Tutorial", "snippet": "Beginners guide."},
+        {"url": "https://www.codecademy.com/learn/angular", "title": "Learn Angular", "snippet": "Codecademy course."},
+        {"url": "https://blog.logrocket.com/angular/", "title": "Angular Tutorial", "snippet": "Modern web apps."},
+        {"url": "https://www.youtube.com/watch?v=angular", "title": "Angular Course", "snippet": "Video course."},
+        {"url": "https://www.reddit.com/r/angular/", "title": "r/angular", "snippet": "Angular community."},
+        {"url": "https://www.tutorialspoint.com/angular/", "title": "Angular Tutorial", "snippet": "TutorialsPoint."},
+    ],
+}
 
-def generate_snapshot_for_date(date, base_ranks=None, day_index=0):
-    """Generate a snapshot with dramatic variation for visual interest"""
-    results = []
-    import random
-    
-    # Start with base ranks, then add dramatic variation
-    if base_ranks is None:
-        base_ranks = list(range(1, 11))
-    
-    ranks = base_ranks.copy()
-    
-    # Create dramatic changes based on day to ensure visible trend
-    # Strategy: Vary new domains entering and rank improvements dramatically
-    
-    if day_index == 0:
-        # Baseline - stable, low activity (no changes from previous)
-        pass  # Keep original ranks - this will be first snapshot so no score
-    elif day_index == 1:
-        # Day 1: Very minor changes (low score ~20-30)
-        # Just swap 1-2 positions
-        idx1, idx2 = random.sample(range(len(ranks)), 2)
-        ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    elif day_index == 2:
-        # Day 2: Moderate activity - reshuffle several positions (~40-50)
-        for _ in range(4):
-            idx1, idx2 = random.sample(range(len(ranks)), 2)
-            ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    elif day_index == 3:
-        # Day 3: NEW DOMAIN ENTERS + big reshuffle (high score ~60-75)
-        # Remove domain at position 10, add new one at position 4-6
-        removed = ranks.pop()  # Remove last domain
-        new_domain = 11  # New domain ID (tutorialspoint)
-        insert_pos = random.randint(3, 5)  # Enter at rank 4-6
-        ranks.insert(insert_pos, new_domain)
-        # Big reshuffle - move many domains
-        for _ in range(6):
-            idx1, idx2 = random.sample(range(len(ranks)), 2)
-            ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    elif day_index == 4:
-        # Day 4: ANOTHER NEW DOMAIN + massive reshuffle (peak score ~75-90)
-        # Remove a different domain, add another new one
-        if len(ranks) >= 10:
-            removed_idx = random.randint(7, len(ranks)-1)
-            removed = ranks.pop(removed_idx)
-        new_domain = 12  # Another new domain (javatpoint)
-        insert_pos = random.randint(2, 4)  # Enter at rank 3-5
-        ranks.insert(insert_pos, new_domain)
-        # Massive reshuffle - almost all domains move
-        for _ in range(8):
-            idx1, idx2 = random.sample(range(len(ranks)), 2)
-            ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    elif day_index == 5:
-        # Day 5: Settle down - fewer changes (~35-45)
-        for _ in range(3):
-            idx1, idx2 = random.sample(range(len(ranks)), 2)
-            ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    elif day_index == 6:
-        # Day 6: Another reshuffle but less dramatic (~45-55)
-        for _ in range(5):
-            idx1, idx2 = random.sample(range(len(ranks)), 2)
-            ranks[idx1], ranks[idx2] = ranks[idx2], ranks[idx1]
-    
-    for i, rank in enumerate(ranks[:10]):
-        domain_idx = rank - 1
-        if domain_idx < len(DOMAINS):
-            url, domain, title = DOMAINS[domain_idx]
-            snippet = SNIPPETS[domain_idx] if domain_idx < len(SNIPPETS) else SNIPPETS[0]
-            
-            results.append({
-                'url': url,
-                'link': url,  # Some APIs use 'link'
-                'title': title,
-                'snippet': snippet,
-                'description': snippet,  # Some APIs use 'description'
-            })
-    
-    return results, ranks
 
-def seed_nextjs_data():
-    """Seed database with 7 days of Next.js data"""
+def _build_results(query: str, order: list) -> list:
+    base = QUERY_BASES[query]
+    return [
+        {"url": base[i]["url"], "title": base[i]["title"], "snippet": base[i]["snippet"]}
+        for i in order
+    ]
+
+
+def seed_data(reset: bool = False):
+    """Insert static synthetic data into the database."""
     with DuckDBManager() as db:
-        print("Seeding database with synthetic Next.js data...")
-        
-        # Start from 7 days ago
-        start_date = datetime.now() - timedelta(days=7)
-        base_ranks = list(range(1, 11))
-        
-        for day in range(7):
-            snapshot_date = start_date + timedelta(days=day)
-            results, new_ranks = generate_snapshot_for_date(snapshot_date, base_ranks, day_index=day)
-            
-            db.insert_snapshot(results, "nextjs", snapshot_date=snapshot_date)
-            print(f"  Added snapshot for {snapshot_date.date()}: {len(results)} results")
-            
-            # Update base ranks for next day (some domains move)
-            base_ranks = new_ranks
-        
+        if reset:
+            db.conn.execute("DELETE FROM interest_scores")
+            db.conn.execute("DELETE FROM serp_snapshots")
+            print("Database reset.")
+        for s in STATIC_SNAPSHOTS:
+            results = _build_results(s["query"], s["order"])
+            snapshot_date = datetime.strptime(s["date"], "%Y-%m-%d")
+            db.insert_snapshot(results, s["query"], snapshot_date=snapshot_date)
         total = db.get_snapshot_count()
-        print(f"\nTotal snapshots in database: {total}")
-        print("\nYou can now run:")
-        print('  python main.py scores --query "nextjs" --days 7')
+        print(f"Seeded {len(STATIC_SNAPSHOTS)} snapshots. Total in DB: {total}")
+
 
 if __name__ == "__main__":
-    seed_nextjs_data()
+    import argparse
+    p = argparse.ArgumentParser(description="Seed database with static synthetic data")
+    p.add_argument("--reset", action="store_true", help="Clear existing data before seeding")
+    seed_data(reset=p.parse_args().reset)

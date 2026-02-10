@@ -66,11 +66,10 @@ python main.py new-entrants --query "nextjs" --days 7
 python main.py volatility --query "nextjs" --days 7
 ```
 
-**Note:** To test the tool with sample data, I've included a seed script to add synthetic data to the database:
+**Note:** To test the tool with sample data, run the seed script:
 ```bash
+python seed_data.py --reset  # Optionally clear existing data first
 python seed_data.py
-# This creates 7 days of synthetic "nextjs" data
-python main.py scores --query "nextjs" --days 7
 ```
 
 ## Usage
@@ -265,6 +264,26 @@ What happens:
 -   Generates a PNG line chart showing the interest score trend over time
 
 **Note:** If no scores are found, run `calculate-scores` first or fetch snapshots on multiple days.
+
+## Multi-Query Comparison Charts
+
+Compare multiple keywords side-by-side with an enhanced visualization:
+
+```bash
+python generate_comparison_chart.py --queries "nextjs" "react" "vue" --days 30 --style modern
+```
+
+**Options:**
+- `--queries`: List of keywords to compare (required)
+- `--days`: Number of days to analyze (default: 30)
+- `--output`: Output PNG file path (default: `comparison_trend.png`)
+- `--style`: Chart style - `modern`, `minimal`, or `vibrant` (default: `modern`)
+
+This generates a visually enhanced chart with:
+- Multiple colored trend lines with area fills
+- Peak value annotations
+- Modern styling with improved typography
+- Side-by-side comparison for competitive analysis
 
 ## Search Interest Score
 
